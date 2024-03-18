@@ -17,6 +17,11 @@ use crate::dependencies::maven::explore_dependency;
 use crate::dependencies::Dependency;
 use crate::{Env, JavaCompilationBackend, Module, PackageBackend, Runtime, Task};
 
+#[cfg(target_family = "windows")]
+const PATH_SEPARATOR: char = ';';
+#[cfg(not(target_family = "windows"))]
+const PATH_SEPARATOR: char = ':';
+
 pub async fn execute_task(
     task: Task,
     env: &Env,
@@ -176,7 +181,7 @@ pub async fn build(module: &Module, backend: JavaCompilationBackend) {
             .iter_compile()
             .map(|it| format!("{}/{}", module.dir.display(), it.classpath()))
             .chain(iter::once(output_dir.display().to_string()))
-            .reduce(|a, b| format!("{};{}", a, b))
+            .reduce(|a, b| format!("{}{}{}", a, PATH_SEPARATOR, b))
             .unwrap();
         ktcmd.arg(&cp);
         println!("compile classpath: {}", &cp);
@@ -222,7 +227,7 @@ pub async fn build(module: &Module, backend: JavaCompilationBackend) {
             .iter_compile()
             .map(|it| format!("{}/{}", module.dir.display(), it.classpath()))
             .chain(iter::once(output_dir.display().to_string()))
-            .reduce(|a, b| format!("{};{}", a, b))
+            .reduce(|a, b| format!("{}{}{}", a, PATH_SEPARATOR, b))
             .unwrap();
         cmd.arg(&cp);
         println!("compile classpath: {}", &cp);
@@ -273,7 +278,7 @@ pub async fn run(module: &Module, entrypoint_name: Option<String>) {
         .iter_runtime()
         .map(|it| format!("{}/{}", module.dir.display(), it.classpath()))
         .chain(iter::once(output_dir.display().to_string()))
-        .reduce(|a, b| format!("{};{}", a, b))
+        .reduce(|a, b| format!("{}{}{}", a, PATH_SEPARATOR, b))
         .unwrap();
     cmd.arg(&cp);
 
@@ -303,7 +308,7 @@ pub async fn build_doc(module: &Module, backend: DocumentationBackend) {
         .dependencies
         .iter_compile()
         .map(|it| format!("{}/{}", module.dir.display(), it.classpath()))
-        .reduce(|a, b| format!("{};{}", a, b))
+        .reduce(|a, b| format!("{}{}{}", a, PATH_SEPARATOR, b))
         .unwrap();
     cmd.arg(&cp);
     println!("compile classpath: {}", &cp);
